@@ -1,8 +1,10 @@
 package one.digitalinnovation.gof.service.impl;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import one.digitalinnovation.gof.model.Cliente;
@@ -29,7 +31,7 @@ public class ClienteServiceImpl implements ClienteService {
 	private EnderecoRepository enderecoRepository;
 	@Autowired
 	private ViaCepService viaCepService;
-	
+
 	// Strategy: Implementar os métodos definidos na interface.
 	// Facade: Abstrair integrações com subsistemas, provendo uma interface simples.
 
@@ -43,7 +45,11 @@ public class ClienteServiceImpl implements ClienteService {
 	public Cliente buscarPorId(Long id) {
 		// Buscar Cliente por ID.
 		Optional<Cliente> cliente = clienteRepository.findById(id);
-		return cliente.get();
+		try {
+			return cliente.get();
+		} catch (NoSuchElementException e) {
+			throw new RuntimeException("Cliente não encontrado com o ID: " + id);
+		}
 	}
 
 	@Override
@@ -57,13 +63,19 @@ public class ClienteServiceImpl implements ClienteService {
 		Optional<Cliente> clienteBd = clienteRepository.findById(id);
 		if (clienteBd.isPresent()) {
 			salvarClienteComCep(cliente);
+		} else {
+			throw new RuntimeException("Cliente não encontrado para atualizar com o ID: " + id);
 		}
 	}
 
 	@Override
 	public void deletar(Long id) {
 		// Deletar Cliente por ID.
-		clienteRepository.deleteById(id);
+		try {
+			clienteRepository.deleteById(id);
+		} catch (EmptyResultDataAccessException e) {
+			throw new RuntimeException("Cliente não encontrado para deletar com o ID: " + id);
+		}
 	}
 
 	private void salvarClienteComCep(Cliente cliente) {
